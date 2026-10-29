@@ -1,74 +1,211 @@
 # UK Wind Generation: Day-Ahead Forecast Portal
 
-A full-stack web application for a day-ahead electricity procurement team. It shows the latest wind generation forecast available at decision time and evaluates forecast accuracy against actual generation.
+A full-stack analytics dashboard for evaluating day-ahead wind generation forecasts against actual generation in Great Britain. The project focuses on forecast accuracy, decision-time forecast selection, and identifying forecasting errors that may affect energy procurement planning.
 
-The application uses **Elexon BMRS data only**: WINDFOR forecasts and FUELHH actuals filtered to `fuelType = WIND` at the national level.
+## Live Application
 
-**Live App:** https://uk-wind-generation-forecast-pr4s.vercel.app
-**GitHub Repository:** https://github.com/shawarma-bro/uk-wind-generation-forecast
+**Dashboard:** https://uk-wind-generation-forecast-pr4s-9uto3xenu.vercel.app/
 
-**AI Tools:** This application was developed with the assistance of Claude by Anthropic.
+**GitHub Repository:** https://github.com/shawarma-bro/ksjviuebrviu
 
-## Files and Directories
+## 1. Project Overview
 
-* `backend/app.py` — Flask application, API routes, and static file serving.
-* `backend/analysis.py` — Forecast selection and error metric calculations.
-* `backend/prepare_data.py` — Converts the raw Elexon JSON export into `backend/data/wind.json`.
-* `backend/data/wind.json` — Processed January 2026 actuals and forecasts used by the application.
-* `api/index.py` — Entry point for Vercel serverless deployment.
-* `frontend/` — React and Vite frontend; `frontend/src/App.jsx` contains the dashboard.
-* `Dockerfile` and `docker-compose.yml` — Container configuration for building and running the application.
-* `vercel.json` and `heroku.yml` — Deployment configuration.
-* `requirements.txt` — Python dependencies.
+Wind generation varies with weather conditions, making accurate forecasting important for electricity procurement and planning.
 
-## Features
+This project compares historical wind generation forecasts with actual generation to help users understand forecasting performance and potential risks.
 
-* Interactive forecast-versus-actual generation chart.
-* Adjustable day-ahead decision cutoff from 06:00 to 12:00 UTC.
-* Forecast error metrics and uncertainty band.
-* Error breakdowns by hour of day, delivery day, and forecast horizon.
-* Summary statistics to help interpret forecast performance for procurement planning.
+The analysis covers **January 2–31, 2026**, using data from Elexon BMRS.
 
-## Start the Application
+### Key Features
 
-### Using Docker
+* Interactive forecast-versus-actual visualisation.
+* Configurable day-ahead forecast decision cutoff.
+* Forecast selection based on publication time to avoid look-ahead bias.
+* Evaluation using MAE, RMSE, forecast bias, MAPE, and percentile-based absolute errors.
+* Error analysis by hour, delivery day, and forecast horizon.
+* Flask API for serving analysis results.
+* React-based interactive dashboard.
+* Docker configuration for containerised execution.
+* Vercel deployment.
 
-From the repository root:
+## 2. Technology Stack
 
-```bash
-docker compose up --build
+| Component              | Technology                   |
+| ---------------------- | ---------------------------- |
+| Frontend               | React, Vite, JavaScript      |
+| Backend                | Python, Flask                |
+| Data source            | Elexon BMRS                  |
+| Visualisation          | Interactive dashboard charts |
+| Deployment             | Vercel                       |
+| Containerisation       | Docker, Docker Compose       |
+| Development assistance | ChatGPT and Claude           |
+
+## 3. Repository Structure
+
+```text
+.
+├── api/
+│   └── index.py
+├── backend/
+│   ├── app.py
+│   ├── analysis.py
+│   ├── prepare_data.py
+│   └── data/
+│       └── wind.json
+├── frontend/
+│   ├── src/
+│   │   └── App.jsx
+│   ├── package.json
+│   └── ...
+├── Dockerfile
+├── docker-compose.yml
+├── requirements.txt
+├── vercel.json
+└── README.md
 ```
 
-Open http://localhost:5000 in your browser.
+### Main Files and Directories
 
-### Without Docker
+* **`api/index.py`** — Entry point for the Vercel serverless API.
+* **`backend/app.py`** — Flask application and API routes.
+* **`backend/analysis.py`** — Forecast selection, data comparison, and evaluation metrics.
+* **`backend/prepare_data.py`** — Prepares and transforms the source data into the application's required format.
+* **`backend/data/wind.json`** — Prepared wind forecast and actual generation data.
+* **`frontend/src/App.jsx`** — Main React dashboard interface.
+* **`frontend/package.json`** — Frontend dependencies and scripts.
+* **`requirements.txt`** — Python dependencies.
+* **`Dockerfile`** — Defines the application container image.
+* **`docker-compose.yml`** — Configures containerised execution.
+* **`vercel.json`** — Configures the Vercel build and routing.
+* **`README.md`** — Project documentation and setup instructions.
 
-Install the Python dependencies:
+## 4. Data Sources
+
+The project uses two datasets from Elexon BMRS:
+
+### WINDFOR
+
+Provides wind generation forecasts.
+
+### FUELHH
+
+Provides half-hourly actual generation data. The dataset is filtered to include only records where `fuelType = WIND`.
+
+The analysis focuses on national-level Great Britain wind generation for January 2–31, 2026.
+
+**Data source:** https://www.elexon.co.uk/
+
+## 5. Analysis Methodology
+
+### 5.1 Forecast Selection
+
+For each delivery day, the application selects the latest eligible forecast published before the configured day-ahead decision cutoff.
+
+The default cutoff is **09:00 UTC**, and users can adjust it.
+
+This prevents forecasts published after the simulated decision time from being used in the evaluation, avoiding look-ahead bias.
+
+### 5.2 Data Alignment
+
+Actual generation is provided at half-hourly intervals, while the forecasts are hourly.
+
+The half-hourly actual generation values are aggregated into hourly averages and aligned with their corresponding forecast delivery periods.
+
+This ensures that forecast and actual values are compared over matching time intervals.
+
+### 5.3 Evaluation Metrics
+
+The dashboard uses several metrics to evaluate forecasting performance.
+
+| Metric         | Description                                                                           |
+| -------------- | ------------------------------------------------------------------------------------- |
+| MAE            | Mean Absolute Error; average absolute forecast error in MW.                           |
+| RMSE           | Root Mean Squared Error; penalises larger errors more heavily.                        |
+| Bias           | Mean signed error, calculated as forecast minus actual.                               |
+| MAPE           | Mean Absolute Percentage Error; expresses errors relative to actual generation.       |
+| P50, P90, P95  | Percentiles of absolute forecast error, showing the distribution of error magnitudes. |
+| Normalised MAE | MAE expressed relative to mean actual generation.                                     |
+
+A positive forecast bias indicates that forecast generation exceeds actual generation on average. A negative bias indicates underforecasting.
+
+MAPE can become unstable when actual generation is close to zero, so it should be interpreted alongside MAE, RMSE, and other metrics.
+
+## 6. Key Results
+
+At the default 09:00 UTC decision cutoff, the dashboard reports the following results for the selected historical period:
+
+| Metric                                |    Result |
+| ------------------------------------- | --------: |
+| Mean Absolute Error (MAE)             |  2,073 MW |
+| Root Mean Squared Error (RMSE)        |  2,539 MW |
+| Forecast Bias                         | +1,773 MW |
+| Mean Absolute Percentage Error (MAPE) |     22.2% |
+| Normalised MAE                        |     18.1% |
+| P90 Absolute Error                    |  4,167 MW |
+| P95 Absolute Error                    |  5,295 MW |
+| Hourly Comparisons                    |       720 |
+
+These results describe the selected historical period and should not be interpreted as guaranteed future performance.
+
+## 7. Getting Started
+
+### Prerequisites
+
+Install the following:
+
+* Python 3.10 or a compatible version.
+* Node.js and npm.
+* Git.
+
+Docker is optional if you prefer containerised execution.
+
+### Step 1: Clone the Repository
+
+```bash
+git clone https://github.com/shawarma-bro/ksjviuebrviu.git
+cd ksjviuebrviu
+```
+
+### Step 2: Install Python Dependencies
+
+From the repository root:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-Build the frontend:
+### Step 3: Install Frontend Dependencies
 
 ```bash
 cd frontend
 npm install
+```
+
+### Step 4: Build the Frontend
+
+```bash
 npm run build
+```
+
+Return to the repository root:
+
+```bash
 cd ..
 ```
 
-Start the Flask application from the repository root:
+### Step 5: Start the Flask Application
 
 ```bash
 python -m flask --app backend.app run --port 5000
 ```
 
-Open http://localhost:5000.
+Open the following address in your browser:
 
-### Frontend Development
+http://127.0.0.1:5000
 
-Start the Flask backend on port 5000, then open another terminal:
+### Running the Frontend in Development Mode
+
+Open a separate terminal and run:
 
 ```bash
 cd frontend
@@ -76,101 +213,71 @@ npm install
 npm run dev
 ```
 
-The Vite development server proxies `/api` requests to the backend on port 5000.
+Open the local URL printed by Vite in the terminal.
 
-## Methodology
+### Running with Docker
 
-### Decision Time and Forecast Selection
-
-Decisions are made on the day before delivery. For each delivery hour, the application selects the latest eligible WINDFOR forecast published before the configured decision cutoff on the preceding day.
-
-The default cutoff is **09:00 UTC**, adjustable from 06:00 to 12:00 UTC.
-
-The forecast selection respects the decision-time constraint to avoid look-ahead bias. UK local time is GMT (UTC+0) during January.
-
-### Analysis Period
-
-The analysis covers delivery days **2–31 January 2026**. Forecast decisions for these delivery days occur on the preceding calendar days, from 1–30 January 2026.
-
-### Actual Generation
-
-FUELHH actual generation is provided at half-hourly resolution, while WINDFOR forecasts are hourly. The two half-hourly actual generation values are averaged to obtain hourly actuals for comparison with the forecasts.
-
-### Accuracy Metrics
-
-The dashboard reports:
-
-* **MAE:** Mean Absolute Error.
-* **RMSE:** Root Mean Squared Error.
-* **Bias:** Mean forecast error, calculated as forecast minus actual.
-* **MAPE:** Mean Absolute Percentage Error.
-* **Normalised MAE:** MAE expressed as a percentage of mean actual generation.
-* **P50, P90 and P95 absolute error:** Percentiles of the absolute forecast errors.
-
-Errors are also analysed by hour of day, delivery day, and forecast horizon.
-
-### Forecast Uncertainty Band
-
-The day-level chart displays a band created by shifting the forecast by the 10th and 90th percentiles of the January forecast errors. This provides an empirical range based on historical errors in the evaluated period; it is not a guaranteed prediction interval.
-
-### Interpretation
-
-At the default 09:00 UTC cutoff, the dashboard reports:
-
-| Metric             |    Result |
-| ------------------ | --------: |
-| MAE                |  2,073 MW |
-| RMSE               |  2,539 MW |
-| Bias               | +1,773 MW |
-| MAPE               |     22.2% |
-| Normalised MAE     |     18.1% |
-| P90 absolute error |  4,167 MW |
-| P95 absolute error |  5,295 MW |
-
-The positive bias indicates that forecast generation was higher than actual generation on average during the evaluated period.
-
-These metrics describe historical forecast performance. They should not be treated as guaranteed thermal generation requirements, which depend on forecast-error direction and wider system conditions.
-
-## API Endpoints
-
-| Endpoint                                | Description                                             |
-| --------------------------------------- | ------------------------------------------------------- |
-| `GET /api/meta`                         | Returns dashboard metadata.                             |
-| `GET /api/day?date=YYYY-MM-DD&cutoff=9` | Returns forecast and actual data for a delivery day.    |
-| `GET /api/metrics?cutoff=9`             | Returns forecast accuracy metrics and error breakdowns. |
-| `GET /api/horizon`                      | Returns forecast error analysis by horizon.             |
-
-The `cutoff` parameter is expressed as an hour in UTC.
-
-## Deployment
-
-### Vercel
-
-Import the GitHub repository into Vercel. The repository's `vercel.json` defines the build, output, and API routing configuration.
-
-**Live deployment:** https://uk-wind-generation-forecast-pr4s.vercel.app
-
-### Heroku
-
-The repository also includes a `heroku.yml` deployment configuration for container-based deployment.
+From the repository root:
 
 ```bash
-heroku stack:set container
-git push heroku main
+docker compose up --build
 ```
 
-## Data Source
+Follow the terminal output for startup status and the application URL.
 
-All forecast and actual generation data used in the analysis comes from Elexon BMRS:
+## 8. API Endpoints
 
-* **WINDFOR:** Wind generation forecasts.
-* **FUELHH:** Half-hourly generation by fuel type, filtered to wind.
+The application exposes API endpoints for retrieving dashboard information and evaluation results.
 
-The analysis uses the processed dataset included in `backend/data/wind.json`.
+| Endpoint                | Purpose                                             |
+| ----------------------- | --------------------------------------------------- |
+| `/api/meta`             | Returns dashboard metadata.                         |
+| `/api/metrics?cutoff=9` | Returns evaluation metrics for the selected cutoff. |
 
-## Limitations
+The API implementation is available in the backend code.
 
-* The evaluation covers one month and may not represent forecast performance in other seasons.
-* Results depend on the selected decision cutoff and delivery period.
-* Historical error percentiles do not guarantee future forecast accuracy.
-* Forecast errors alone do not determine the optimal electricity purchasing strategy or required thermal generation.
+## 9. Deployment
+
+The application is deployed on Vercel.
+
+The deployment configuration builds the React frontend and routes API requests to the Python serverless entry point.
+
+**Live application:** https://uk-wind-generation-forecast-pr4s-9uto3xenu.vercel.app/
+
+## 10. Use of AI-Assisted Development Tools
+
+ChatGPT and Claude were used as development assistance tools during this project.
+
+Their assistance supported activities such as:
+
+* Exploring implementation approaches.
+* Understanding technical concepts and data-processing methods.
+* Troubleshooting development and deployment issues.
+* Reviewing code structure and possible improvements.
+* Refining project documentation.
+
+AI-generated suggestions were treated as assistance and checked against the project requirements and implementation. The tools supported the development workflow rather than replacing the project's data sources, analytical methodology, or validation.
+
+## 11. Limitations
+
+* The analysis covers one historical month and may not represent performance across other seasons.
+* Forecast accuracy does not guarantee future wind generation or procurement outcomes.
+* MAPE can be unstable when actual generation is close to zero.
+* Historical forecast evaluation alone does not determine optimal electricity procurement decisions.
+* The dashboard provides analytical insights rather than automated purchasing recommendations.
+
+## 12. Future Improvements
+
+Potential improvements include:
+
+* Extending the analysis to additional months and seasons.
+* Comparing forecast performance across different decision cutoffs.
+* Adding further forecasting-error and operational-risk indicators.
+* Automating periodic data updates and evaluation.
+* Incorporating additional historical periods to assess seasonal variation.
+
+## 13. Conclusion
+
+This project combines historical electricity data, forecast-selection logic, statistical evaluation, and interactive visualisation in a full-stack application.
+
+Its primary focus is evaluating wind generation forecast accuracy using only information available before a defined day-ahead decision cutoff. This provides a more realistic assessment of historical forecast performance and supports informed energy procurement planning.
